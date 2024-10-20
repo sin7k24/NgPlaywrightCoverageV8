@@ -9,18 +9,21 @@ import v8toIstanbul from 'v8-to-istanbul';
 
 // nyc（istanbulのCLI）がカバレッジ集計対象とするデフォルトディレクトリ（webshinsei/.nyc_output）
 const istanbulCLIOutput = path.join(process.cwd(), '.nyc_output');
+if (!fs.existsSync(istanbulCLIOutput)) {
+    fs.mkdirSync(istanbulCLIOutput);
+}
 
 // 1testケース毎のファイル名ランダムパート
 const generateUUID = () => crypto.randomBytes(16).toString('hex');
 
-const test = testBase.extend({
+const test = testBase.extend<{ autoTestFixture: any }>({
     autoTestFixture: [
         async ({ page, request }, use) => {
             // V8カバレッジデータの取得はChromium実行時のみ行う
             const isChromium = test.info().project.name === 'chromium';
             if (isChromium) {
                 await page.coverage.startJSCoverage({
-                    resetOnNavigation: false
+                    resetOnNavigation: false,
                 });
             }
 
@@ -33,36 +36,21 @@ const test = testBase.extend({
                 const coverages = await page.coverage.stopJSCoverage();
 
                 for (const entry of coverages) {
-                    console.log('entry.url', entry.url);
-                    // if (
-                    //     entry.url.endsWith('runtime.js') ||
-                    //     entry.url.endsWith('polyfills.js') ||
-                    //     entry.url.endsWith('vendor.js') ||
-                    //     entry.url.endsWith('styles.js') ||
-                    //     entry.url.endsWith('scripts.js') ||
-                    //     entry.url.endsWith('fakeInstallMpa.js') ||
-                    //     entry.url.endsWith('fakeInstallMRBE.js') ||
-                    //     entry.url.endsWith('common.js') ||
-                    //     entry.url.endsWith('/@vite/client')
-                    // ) {
-                    //     continue;
-                    // }
-
-                    if (
-                        !entry.url.endsWith('main.js')
-                    ) {
+                    if (!entry.url.endsWith('main.js')) {
                         continue;
                     }
+
+                    console.log('entry.url', entry.url);
 
                     // ソースマップ取得
                     const sourceMapPms = await request.get(entry.url + '.map');
                     const sourceMap = await sourceMapPms.json();
-                    sourceMap.sourceRoot = './';
+                    // sourceMap.sourceRoot = './';
 
                     // Typescript変換しつつ、カバレッジをV8形式からistanbul形式へ変換
                     const converter = v8toIstanbul('', 0, {
                         source: entry.source,
-                        sourceMap: { sourcemap: sourceMap }
+                        sourceMap: { sourcemap: sourceMap },
                     });
                     await converter.load();
                     converter.applyCoverage(entry.functions);
@@ -70,7 +58,10 @@ const test = testBase.extend({
                     // .nyc_output/へistanbul形式カバレッジファイルを出力
                     const coverageJson = JSON.stringify(converter.toIstanbul());
                     fs.writeFileSync(
-                        path.join(istanbulCLIOutput, `playwright_coverage_${generateUUID()}.json`),
+                        path.join(
+                            istanbulCLIOutput,
+                            `playwright_coverage_${generateUUID()}.json`
+                        ),
                         coverageJson
                     );
                 }
@@ -78,8 +69,8 @@ const test = testBase.extend({
         },
         {
             scope: 'test',
-            auto: true
-        }
-    ]
+            auto: true,
+        },
+    ],
 });
 export { expect, test };
