@@ -6,8 +6,9 @@
         "start": "ng serve",
         "build": "ng build",
         "watch": "ng build --watch --configuration development",
+        "test": "ng test",
         "e2e": "rimraf .nyc_output && npx playwright test --project chromium",
-        "test": "ng test"
+        "e2e-report": "nyc report"
     },
     "private": true,
     "dependencies": {

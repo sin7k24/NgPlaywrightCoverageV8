@@ -1,21 +1,19 @@
-// test関数を拡張。playwrightがブラウザを閉じる度にカバレッジ情報（window.__coverage__）を.nyc_output/に出力する。
-// 各Playwright実装spec.tsでは、本tsでexportされたtest関数を使用することで、カバレッジ測定が可能になる。
-
 import { expect, test as testBase } from '@playwright/test';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import v8toIstanbul from 'v8-to-istanbul';
 
-// nyc（istanbulのCLI）がカバレッジ集計対象とするデフォルトディレクトリ（webshinsei/.nyc_output）
+// Default directory that nyc command refers to.
 const istanbulCLIOutput = path.join(process.cwd(), '.nyc_output');
 if (!fs.existsSync(istanbulCLIOutput)) {
     fs.mkdirSync(istanbulCLIOutput);
 }
 
-// 1testケース毎のファイル名ランダムパート
+// Random part of file name for each test case
 const generateUUID = () => crypto.randomBytes(16).toString('hex');
 
+// Extend playwright's test function
 const test = testBase.extend<{ autoTestFixture: any }>({
     autoTestFixture: [
         async ({ page, request }, use) => {
