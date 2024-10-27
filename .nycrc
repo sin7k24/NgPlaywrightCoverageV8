@@ -10,6 +10,7 @@
         "html",
         "lcov",
         "text-summary",
-        "text"
+        "text",
+        "json"
     ]
 }

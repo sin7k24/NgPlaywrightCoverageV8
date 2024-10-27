@@ -9,3 +9,5 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 1. npm run start
 1. npm run e2e
 1. npm run e2e-report
+1. npm test
+1. npm run merge-report

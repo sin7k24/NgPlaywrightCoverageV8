@@ -48,3 +48,6 @@ node_modules/
 
 .nyc_output/
 coverage-e2e/
+coverage-jest/
+coverage-merged/
+covwork/
