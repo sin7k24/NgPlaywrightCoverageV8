@@ -17,7 +17,7 @@ const generateUUID = () => crypto.randomBytes(16).toString('hex');
 const test = testBase.extend<{ autoTestFixture: any }>({
     autoTestFixture: [
         async ({ page, request }, use) => {
-            // V8カバレッジデータの取得はChromium実行時のみ行う
+            // Dump V8 coverage only when chromium
             const isChromium = test.info().project.name === 'chromium';
             if (isChromium) {
                 await page.coverage.startJSCoverage({
@@ -25,14 +25,12 @@ const test = testBase.extend<{ autoTestFixture: any }>({
                 });
             }
 
-            // test実行
+            // exec test
             await use();
 
-            // test完了後カバレッジデータを.nyc_output/へダンプ
+            // test done. dump coverage json file to .nyc_output/
             if (isChromium) {
-                // main.jsのV8カバレッジデータ取得
                 const coverages = await page.coverage.stopJSCoverage();
-
                 for (const entry of coverages) {
                     if (!entry.url.endsWith('main.js')) {
                         continue;
@@ -40,12 +38,12 @@ const test = testBase.extend<{ autoTestFixture: any }>({
 
                     console.log('entry.url', entry.url);
 
-                    // ソースマップ取得
+                    // fetch sourcemap to covertback to typescript
                     const sourceMapPms = await request.get(entry.url + '.map');
                     const sourceMap = await sourceMapPms.json();
                     // sourceMap.sourceRoot = './';
 
-                    // Typescript変換しつつ、カバレッジをV8形式からistanbul形式へ変換
+                    // Convert to Typescript and Convert coverage from V8 format to istanbul format 
                     const converter = v8toIstanbul('', 0, {
                         source: entry.source,
                         sourceMap: { sourcemap: sourceMap },
@@ -53,7 +51,7 @@ const test = testBase.extend<{ autoTestFixture: any }>({
                     await converter.load();
                     converter.applyCoverage(entry.functions);
 
-                    // .nyc_output/へistanbul形式カバレッジファイルを出力
+                    // Output istanbul format coverage file to .nyc_output/
                     const coverageJson = JSON.stringify(converter.toIstanbul());
                     fs.writeFileSync(
                         path.join(
